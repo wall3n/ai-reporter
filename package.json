@@ -1,0 +1,47 @@
+{
+  "name": "ai-reporter",
+  "version": "1.0.0",
+  "description": "24/7 AI token & cost tracker for Claude Code, Antigravity, Cursor, Copilot, OpenCode and more",
+  "type": "module",
+  "bin": {
+    "ai-reporter": "./bin/ai-reporter.mjs"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node dist/index.js",
+    "dev": "node --experimental-strip-types src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/build.mjs --test && node --test dist/test/*.test.js"
+  },
+  "author": "Francisco Moreno Sánchez <franmoreno1506@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wall3n/ai-reporter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wall3n/ai-reporter/issues"
+  },
+  "homepage": "https://github.com/wall3n/ai-reporter#readme",
+  "keywords": [
+    "ai",
+    "token-tracker",
+    "cost-tracker",
+    "claude-code",
+    "antigravity",
+    "cursor",
+    "copilot",
+    "opencode",
+    "hackspain",
+    "tui",
+    "cli"
+  ],
+  "dependencies": {
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@esbuild/darwin-arm64": "^0.28.2",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}

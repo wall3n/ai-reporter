@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build artifacts (dist/index.js is tracked for direct execution / curl installer)
+dist/*
+!dist/index.js
+
+# Logs & temporary files
+*.log
+*.err
+.DS_Store
+
+# Reference clones
+hackspain26/
