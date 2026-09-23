@@ -61,8 +61,10 @@ program.action(() => {
 
   console.log();
   ui.line(c.bold("Commands:"));
-  ui.line(`  ${c.bold(c.cyan("ai-reporter watch"))}              Live full-terminal dashboard & file watcher`);
-  ui.line(`  ${c.bold(c.cyan("ai-reporter stats"))}              Detailed spend & model analytics (--today, --week, etc.)`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter watch"))}              Live full-terminal dashboard & watcher (Tab for Stats page)`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter stats"))}              Spend, model analytics & fun metrics (drown lakes, toasters)`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter stats -w / -m / -y"))} Week, Month, or Year breakdown view`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter stats -i"))}           Full interactive terminal statistics page`);
   ui.line(`  ${c.bold(c.cyan("ai-reporter scan"))}               Scan and catch up all local session files now`);
   ui.line(`  ${c.bold(c.cyan("ai-reporter log"))}                View recent requests stream`);
   ui.line(`  ${c.bold(c.cyan("ai-reporter service install"))}    Run 24/7 in the background on macOS (launchd)`);

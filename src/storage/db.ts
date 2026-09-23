@@ -5,9 +5,13 @@ import type {
   DailyUsage,
   HarnessSummary,
   ModelSummary,
+  PeriodBucket,
+  PeriodStats,
+  PeriodType,
   ProjectSummary,
   UsageSummary,
 } from "../core/types";
+import { computeFunMetrics } from "../core/fun-metrics";
 import type { HarnessId, TelemetryEvent } from "../core/schema";
 
 export class ReporterDatabase {
@@ -349,6 +353,202 @@ export class ReporterDatabase {
       .reverse();
   }
 
+  public getPeriodStats(
+    type: PeriodType,
+    offset = 0,
+    refDate = new Date()
+  ): PeriodStats {
+    const refYear = refDate.getUTCFullYear();
+    const refMonth = refDate.getUTCMonth();
+    const refDateNum = refDate.getUTCDate();
+    const refDay = refDate.getUTCDay();
+
+    let start: Date;
+    let end: Date;
+    let prevStart: Date;
+    let prevEnd: Date;
+    let label = "";
+    let rangeLabel = "";
+    let prevLabel = "";
+    const buckets: PeriodBucket[] = [];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+    const shortMonthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
+    if (type === "week") {
+      const diffToMon = (refDay === 0 ? -6 : 1) - refDay;
+      const mondayOffset = diffToMon + offset * 7;
+      start = new Date(Date.UTC(refYear, refMonth, refDateNum + mondayOffset, 0, 0, 0, 0));
+      end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + 6, 23, 59, 59, 999));
+
+      prevStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() - 7, 0, 0, 0, 0));
+      prevEnd = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() - 7, 23, 59, 59, 999));
+
+      const isoWeek = getISOWeekNumber(start);
+      const startStr = `${shortMonthNames[start.getUTCMonth()]} ${start.getUTCDate()}`;
+      const endStr = `${shortMonthNames[end.getUTCMonth()]} ${end.getUTCDate()}, ${end.getUTCFullYear()}`;
+      label = `Week ${isoWeek} · ${startStr} – ${endStr}`;
+      rangeLabel = `${start.toISOString().slice(0, 10)} → ${end.toISOString().slice(0, 10)}`;
+      prevLabel = `Week ${getISOWeekNumber(prevStart)}`;
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + i, 0, 0, 0, 0));
+        const key = d.toISOString().slice(0, 10);
+        buckets.push({
+          cached: 0,
+          costUsd: 0,
+          input: 0,
+          key,
+          label: `${dayNames[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, "0")}`,
+          output: 0,
+          requests: 0,
+          subLabel: dayNames[d.getUTCDay()],
+          tokens: 0,
+        });
+      }
+    } else if (type === "month") {
+      start = new Date(Date.UTC(refYear, refMonth + offset, 1, 0, 0, 0, 0));
+      end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+
+      prevStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 1, 1, 0, 0, 0, 0));
+      prevEnd = new Date(Date.UTC(prevStart.getUTCFullYear(), prevStart.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+
+      label = `${monthNames[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
+      rangeLabel = `${start.toISOString().slice(0, 10)} → ${end.toISOString().slice(0, 10)}`;
+      prevLabel = `${shortMonthNames[prevStart.getUTCMonth()]} ${prevStart.getUTCFullYear()}`;
+
+      const daysInMonth = end.getUTCDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), i, 0, 0, 0, 0));
+        const key = d.toISOString().slice(0, 10);
+        buckets.push({
+          cached: 0,
+          costUsd: 0,
+          input: 0,
+          key,
+          label: String(i).padStart(2, "0"),
+          output: 0,
+          requests: 0,
+          subLabel: dayNames[d.getUTCDay()],
+          tokens: 0,
+        });
+      }
+    } else {
+      // type === "year"
+      const targetYear = refYear + offset;
+      start = new Date(Date.UTC(targetYear, 0, 1, 0, 0, 0, 0));
+      end = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
+
+      prevStart = new Date(Date.UTC(targetYear - 1, 0, 1, 0, 0, 0, 0));
+      prevEnd = new Date(Date.UTC(targetYear - 1, 11, 31, 23, 59, 59, 999));
+
+      label = `Year ${targetYear}`;
+      rangeLabel = `${start.toISOString().slice(0, 10)} → ${end.toISOString().slice(0, 10)}`;
+      prevLabel = `Year ${targetYear - 1}`;
+
+      for (let m = 0; m < 12; m++) {
+        const key = `${targetYear}-${String(m + 1).padStart(2, "0")}`;
+        buckets.push({
+          cached: 0,
+          costUsd: 0,
+          input: 0,
+          key,
+          label: shortMonthNames[m],
+          output: 0,
+          requests: 0,
+          subLabel: monthNames[m],
+          tokens: 0,
+        });
+      }
+    }
+
+    const since = start.toISOString();
+    const until = end.toISOString();
+
+    const bucketSubstrLen = type === "year" ? 7 : 10;
+    const bucketQuery = `
+      SELECT
+        substr(occurredAt, 1, ${bucketSubstrLen}) as bucketKey,
+        COUNT(*) as requests,
+        COALESCE(SUM(tokensTotal), 0) as tokens,
+        COALESCE(SUM(tokensInput), 0) as input,
+        COALESCE(SUM(tokensOutput), 0) as output,
+        COALESCE(SUM(tokensCacheRead + tokensCacheWrite), 0) as cached,
+        COALESCE(SUM(costUsd), 0) as costUsd
+      FROM events
+      WHERE type = 'usage' AND occurredAt >= ? AND occurredAt <= ?
+      GROUP BY bucketKey
+    `;
+    const bucketRows = this.db.prepare(bucketQuery).all(since, until) as any[];
+    const bucketMap = new Map<string, any>();
+    for (const r of bucketRows) {
+      bucketMap.set(r.bucketKey, r);
+    }
+
+    for (const b of buckets) {
+      const match = bucketMap.get(b.key);
+      if (match) {
+        b.requests = Number(match.requests) || 0;
+        b.tokens = Number(match.tokens) || 0;
+        b.input = Number(match.input) || 0;
+        b.output = Number(match.output) || 0;
+        b.cached = Number(match.cached) || 0;
+        b.costUsd = Math.round((Number(match.costUsd) || 0) * 1000) / 1000;
+      }
+    }
+
+    const summary = this.getSummary({ since, until });
+    const prevSummary = this.getSummary({
+      since: prevStart.toISOString(),
+      until: prevEnd.toISOString(),
+    });
+
+    let tokenDeltaPercent: number | undefined;
+    if (prevSummary.totalTokens > 0) {
+      tokenDeltaPercent =
+        Math.round(
+          ((summary.totalTokens - prevSummary.totalTokens) / prevSummary.totalTokens) * 1000
+        ) / 10;
+    }
+    let costDeltaPercent: number | undefined;
+    if (prevSummary.totalCostUsd > 0) {
+      costDeltaPercent =
+        Math.round(
+          ((summary.totalCostUsd - prevSummary.totalCostUsd) / prevSummary.totalCostUsd) * 1000
+        ) / 10;
+    }
+
+    const harnesses = this.getHarnessSummaries({ since, until });
+    const models = this.getModelSummaries({ limit: 10, since, until });
+    const projects = this.getProjectSummaries({ limit: 10, since, until });
+    const funMetrics = computeFunMetrics(summary);
+
+    return {
+      buckets,
+      costDeltaPercent,
+      funMetrics,
+      harnesses,
+      label,
+      models,
+      offset,
+      prevLabel,
+      prevSummary,
+      projects,
+      rangeLabel,
+      since,
+      summary,
+      tokenDeltaPercent,
+      type,
+      until,
+    };
+  }
+
   public getRecentEvents(options?: {
     limit?: number;
     harness?: string;
@@ -481,4 +681,12 @@ export function getDatabase(): ReporterDatabase {
     defaultDb = new ReporterDatabase();
   }
   return defaultDb;
+}
+
+export function getISOWeekNumber(d: Date): number {
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayNum = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  return Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }

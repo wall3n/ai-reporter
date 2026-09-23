@@ -27,4 +27,9 @@ if [ -z "$NODE_CMD" ]; then
   exit 1
 fi
 
-exec "$NODE_CMD" "/Users/franmoreno/.local/share/ai-reporter/ai-reporter.mjs" "$@"
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)"
+if [ -f "$SCRIPT_DIR/dist/index.js" ]; then
+  exec "$NODE_CMD" "$SCRIPT_DIR/dist/index.js" "$@"
+fi
+
+exec "$NODE_CMD" "$HOME/.local/share/ai-reporter/ai-reporter.mjs" "$@"
