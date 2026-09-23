@@ -4,10 +4,11 @@ import { c, colorEnabled, rgb, stripAnsi, terminalText, width } from "./style";
 import { renderTable } from "./table";
 import { box, compactNumber, fit, formatAgo, formatUsd, gauge, pad, wrap } from "./tui";
 import type { HarnessId, TelemetryEvent } from "../core/schema";
-import type { HarnessSummary, UsageSummary } from "../core/types";
+import type { HarnessSummary, PeriodType, UsageSummary } from "../core/types";
 import { getDatabase } from "../storage/db";
 import { getServiceStatus } from "../service/launchd";
 import type { Watcher } from "../engine/watcher";
+import { renderStatsLines } from "./stats-render";
 
 export const HARNESS_INFO: Record<
   string,
@@ -45,6 +46,8 @@ export type ScreenState = {
 export type ScreenOptions = {
   mode?: "standalone" | "attached";
   attachedPid?: number;
+  initialTab?: "watch" | "stats";
+  initialPeriod?: PeriodType;
 };
 
 export class Screen {
@@ -61,9 +64,19 @@ export class Screen {
   private lastKnownTotalRequests = -1;
   private isScanning = false;
 
+  private activeTab: "watch" | "stats" = "watch";
+  private activePeriod: PeriodType = "month";
+  private periodOffset = 0;
+
   constructor(watcher: Watcher, options: ScreenOptions = {}) {
     this.watcher = watcher;
     this.options = options;
+    if (options.initialTab) {
+      this.activeTab = options.initialTab;
+    }
+    if (options.initialPeriod) {
+      this.activePeriod = options.initialPeriod;
+    }
     if (options.mode === "attached") {
       this.statusMessage = options.attachedPid
         ? `Live stream active (PID ${options.attachedPid})`
@@ -114,21 +127,58 @@ export class Screen {
           process.exit(0);
         } else if (key.name === "q") {
           this.stop();
-        } else if (key.name === "p") {
-          const paused = this.watcher.togglePause();
-          this.statusMessage = paused ? "Watcher paused" : "Watcher resumed";
+        } else if (key.name === "tab") {
+          this.activeTab = this.activeTab === "watch" ? "stats" : "watch";
           this.render();
-        } else if (key.name === "s") {
-          if (this.isScanning) return;
-          this.statusMessage = "Immediate scan triggered...";
+        } else if (key.name === "1") {
+          this.activeTab = "watch";
           this.render();
-          if (this.isAttached()) {
-            await this.triggerScan();
-          } else {
-            this.watcher.wake();
+        } else if (key.name === "2") {
+          this.activeTab = "stats";
+          this.render();
+        } else if (this.activeTab === "stats") {
+          if (key.name === "w") {
+            this.activePeriod = "week";
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "m") {
+            this.activePeriod = "month";
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "y") {
+            this.activePeriod = "year";
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "left" || key.name === "h") {
+            this.periodOffset -= 1;
+            this.render();
+          } else if (key.name === "right" || key.name === "l") {
+            this.periodOffset += 1;
+            this.render();
+          } else if (key.name === "0" || key.name === "t") {
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "r") {
+            this.render();
           }
-        } else if (key.name === "r") {
-          this.render();
+        } else {
+          // activeTab === "watch"
+          if (key.name === "p") {
+            const paused = this.watcher.togglePause();
+            this.statusMessage = paused ? "Watcher paused" : "Watcher resumed";
+            this.render();
+          } else if (key.name === "s") {
+            if (this.isScanning) return;
+            this.statusMessage = "Immediate scan triggered...";
+            this.render();
+            if (this.isAttached()) {
+              await this.triggerScan();
+            } else {
+              this.watcher.wake();
+            }
+          } else if (key.name === "r") {
+            this.render();
+          }
         }
       });
     }
@@ -201,12 +251,39 @@ export class Screen {
     }
     this.lastKnownTotalRequests = allSummary.totalRequests;
 
-    // 1. Header Banner
+    // 1. Header Banner & Tab Navigation
     const bannerSubtitle = this.isAttached()
       ? "24/7 AI Token & Spend Tracker · Live Monitor"
       : "24/7 AI Token & Spend Tracker";
     lines.push(banner(bannerSubtitle, cols));
     lines.push("");
+
+    const tab1 =
+      this.activeTab === "watch"
+        ? c.bold(c.cyan("● [1] Live Monitor"))
+        : c.dim("○ [1] Live Monitor");
+    const tab2 =
+      this.activeTab === "stats"
+        ? c.bold(c.gold("● [2] Statistics (Month/Week/Year)"))
+        : c.dim("○ [2] Statistics (Month/Week/Year)");
+    const tabHint = c.dim("[Press Tab or 1/2 to switch]");
+    lines.push(`  ${tab1}   ${tab2}   ${tabHint}`);
+    lines.push("");
+
+    if (this.activeTab === "stats") {
+      const stats = db.getPeriodStats(this.activePeriod, this.periodOffset);
+      const statsLines = renderStatsLines(stats, {
+        activeTab: this.activePeriod,
+        cols,
+        interactive: true,
+      });
+      for (const sl of statsLines) {
+        lines.push(sl);
+      }
+      const screenBuffer = lines.slice(0, rows).join("\n");
+      process.stdout.write(`\x1b[H\x1b[2J${screenBuffer}`);
+      return;
+    }
 
     // 2. Status & Countdown Gauge
     const remainingMs = Math.max(0, this.nextScanAt - now);
@@ -336,7 +413,7 @@ export class Screen {
     }
 
     // 6. Footer Navigation / Keybindings
-    const footer = `  ${c.bold("q")} Quit  ·  ${c.bold("p")} Pause/Resume  ·  ${c.bold("s")} Scan Now  ·  ${c.bold("r")} Refresh  ·  ${c.dim("AI-Reporter running 24/7")}`;
+    const footer = `  ${c.bold("Tab")} Statistics Page  ·  ${c.bold("q")} Quit  ·  ${c.bold("p")} Pause/Resume  ·  ${c.bold("s")} Scan Now  ·  ${c.bold("r")} Refresh  ·  ${c.dim("AI-Reporter running 24/7")}`;
     lines.push(footer);
 
     // Render cleanly: clear screen, print buffer

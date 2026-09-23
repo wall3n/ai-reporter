@@ -14,8 +14,9 @@ export function registerWatch(program: Command): void {
     .option("-i, --interval <seconds>", "seconds between scans", "30")
     .option("--once", "scan once, print summary, and exit")
     .option("--plain", "line-by-line output instead of full-terminal TUI")
+    .option("--stats", "open directly to statistics page (month/week/year)")
     .option("-v, --verbose", "log details of every scan")
-    .action(async (options: { interval: string; once?: boolean; plain?: boolean; verbose?: boolean }) => {
+    .action(async (options: { interval: string; once?: boolean; plain?: boolean; stats?: boolean; verbose?: boolean }) => {
       const intervalSec = Math.max(5, Number(options.interval) || 30);
       const intervalMs = intervalSec * 1000;
       const isPlain = Boolean(options.plain || options.once || !process.stdout.isTTY);
@@ -128,6 +129,7 @@ export function registerWatch(program: Command): void {
         // Live monitor attached to running 24/7 service
         const screen = new Screen(watcher, {
           attachedPid: lockResult.pid,
+          initialTab: options.stats ? "stats" : "watch",
           mode: "attached",
         });
 
@@ -147,7 +149,10 @@ export function registerWatch(program: Command): void {
       }
 
       // Standalone interactive TUI
-      const screen = new Screen(watcher, { mode: "standalone" });
+      const screen = new Screen(watcher, {
+        initialTab: options.stats ? "stats" : "watch",
+        mode: "standalone",
+      });
       watcher["onScanComplete"] = (res) => {
         screen.onScanResult(res.totalNew, res.durationMs);
       };

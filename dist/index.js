@@ -762,8 +762,8 @@ ${itemIndentStr}`);
        * @param {number} width
        * @returns {string}
        */
-      boxWrap(str, width4) {
-        if (width4 < this.minWidthToWrap) return str;
+      boxWrap(str, width5) {
+        if (width5 < this.minWidthToWrap) return str;
         const rawLines = str.split(/\r\n|\n/);
         const chunkPattern = /[\s]*[^\s]+/g;
         const wrappedLines = [];
@@ -777,7 +777,7 @@ ${itemIndentStr}`);
           let sumWidth = this.displayWidth(sumChunks[0]);
           chunks.forEach((chunk) => {
             const visibleWidth = this.displayWidth(chunk);
-            if (sumWidth + visibleWidth <= width4) {
+            if (sumWidth + visibleWidth <= width5) {
               sumChunks.push(chunk);
               sumWidth += visibleWidth;
               return;
@@ -5794,6 +5794,103 @@ var ALL_COLLECTORS = [
 // src/storage/db.ts
 import { DatabaseSync as DatabaseSync2 } from "node:sqlite";
 import { dirname as dirname6 } from "node:path";
+
+// src/core/fun-metrics.ts
+var LITERS_PER_MILLION_TOKENS = 25;
+var LAKE_LITERS = 1e7;
+var OLYMPIC_POOL_LITERS = 25e5;
+var BATHTUB_LITERS = 150;
+var BOTTLE_LITERS = 0.5;
+var KWH_PER_THOUSAND_TOKENS = 3e-4;
+var KWH_PER_TOAST_SLICE = 0.0165;
+var KWH_PER_PHONE_CHARGE = 0.015;
+var KWH_PER_LED_HOUR = 0.01;
+var CO2_KG_PER_KWH = 0.385;
+var CO2_KG_PER_CAR_KM = 0.25;
+var CO2_KG_PER_TREE_YEAR = 22;
+var WORDS_PER_TOKEN = 0.75;
+var WORDS_PER_TYPING_HOUR = 50 * 60;
+var WAR_AND_PEACE_WORDS = 587287;
+var HARRY_POTTER_SERIES_WORDS = 1084170;
+var SPECIALTY_COFFEE_USD = 4.5;
+var PIZZA_USD = 18;
+function computeFunMetrics(summary) {
+  const tokens = Math.max(0, summary.totalTokens || 0);
+  const costUsd = Math.max(0, summary.totalCostUsd || 0);
+  const waterLiters = tokens / 1e6 * LITERS_PER_MILLION_TOKENS;
+  const drownLakes = waterLiters / LAKE_LITERS;
+  const olympicPools = waterLiters / OLYMPIC_POOL_LITERS;
+  const bathtubs = waterLiters / BATHTUB_LITERS;
+  const waterBottles = waterLiters / BOTTLE_LITERS;
+  let lakeCommentary = "\u{1F33F} Pristine Nature: Zero drops evaporated. No lakes were harmed in the making of this code.";
+  let lakeBadge = "\u{1F331} Eco Dewdrop";
+  if (drownLakes >= 1) {
+    lakeCommentary = `\u{1F6A8} Catastrophic Drought: You have personally evaporated ${drownLakes.toFixed(2)} freshwater lakes to debug your agentic loops!`;
+    lakeBadge = "\u{1F30A} Lake Destroyer Class IX";
+  } else if (drownLakes >= 0.1) {
+    lakeCommentary = `\u26A0\uFE0F Environmental Emergency: Local wildlife is drafting a cease-and-desist over ${drownLakes.toFixed(3)} lakes evaporated.`;
+    lakeBadge = "\u{1F3CA} Olympic Basin Drainer";
+  } else if (drownLakes >= 0.01) {
+    lakeCommentary = `\u{1F30A} Lake Drainer: Walden Pond would be dropping noticeably (${olympicPools.toFixed(2)} Olympic pools boiled off into cloud steam).`;
+    lakeBadge = "\u{1F986} Pond Vaporizer";
+  } else if (drownLakes >= 1e-3) {
+    lakeCommentary = `\u{1F986} Pond Alert: Local koi fish are nervously sweating as your tokens boiled off ${bathtubs.toFixed(0)} bathtubs of water.`;
+    lakeBadge = "\u{1F6C1} Bathtub Boiler";
+  } else if (bathtubs >= 5) {
+    lakeCommentary = `\u{1F6C1} Steamy Session: Enough GPU cooling water evaporated to fill ${bathtubs.toFixed(0)} warm bubble baths for rubber ducks.`;
+    lakeBadge = "\u{1F4A7} Hydration Overload";
+  } else if (waterLiters >= 1) {
+    lakeCommentary = `\u{1F964} Thirsty LLM: Your AI agent drank ${waterBottles.toFixed(0)} bottles of chilled spring water while writing code.`;
+    lakeBadge = "\u{1F964} Bottle Chugger";
+  } else if (tokens > 0) {
+    lakeCommentary = `\u{1F331} Modest Sip: Datacenter cooling merely took a polite sip of ${waterLiters.toFixed(2)} Liters of water.`;
+    lakeBadge = "\u{1F4A7} Gentle Sipper";
+  }
+  const kwh = tokens / 1e3 * KWH_PER_THOUSAND_TOKENS;
+  const toastsRun = kwh / KWH_PER_TOAST_SLICE;
+  const smartphonesCharged = kwh / KWH_PER_PHONE_CHARGE;
+  const ledLightbulbHours = kwh / KWH_PER_LED_HOUR;
+  const co2Kg = kwh * CO2_KG_PER_KWH;
+  const carKmDriven = co2Kg / CO2_KG_PER_CAR_KM;
+  const treeYearsToOffset = co2Kg / CO2_KG_PER_TREE_YEAR;
+  const wordsEquivalent = tokens * WORDS_PER_TOKEN;
+  const humanTypingHours = wordsEquivalent / WORDS_PER_TYPING_HOUR;
+  const humanTypingDays = humanTypingHours / 24;
+  const warAndPeaceCopies = wordsEquivalent / WAR_AND_PEACE_WORDS;
+  const harryPotterSeries = wordsEquivalent / HARRY_POTTER_SERIES_WORDS;
+  const coffeesEquivalent = costUsd / SPECIALTY_COFFEE_USD;
+  const pizzasEquivalent = costUsd / PIZZA_USD;
+  return {
+    bathtubs: round(bathtubs, 1),
+    carKmDriven: round(carKmDriven, 1),
+    co2Kg: round(co2Kg, 2),
+    coffeesEquivalent: round(coffeesEquivalent, 1),
+    drownLakes: round(drownLakes, 6),
+    harryPotterSeries: round(harryPotterSeries, 2),
+    humanTypingDays: round(humanTypingDays, 1),
+    humanTypingHours: round(humanTypingHours, 1),
+    kwh: round(kwh, 3),
+    lakeBadge,
+    lakeCommentary,
+    ledLightbulbHours: round(ledLightbulbHours, 1),
+    olympicPools: round(olympicPools, 4),
+    pizzasEquivalent: round(pizzasEquivalent, 1),
+    smartphonesCharged: round(smartphonesCharged, 1),
+    toastsRun: round(toastsRun, 1),
+    treeYearsToOffset: round(treeYearsToOffset, 2),
+    warAndPeaceCopies: round(warAndPeaceCopies, 2),
+    waterBottles: round(waterBottles, 0),
+    waterLiters: round(waterLiters, 2),
+    wordsEquivalent: Math.round(wordsEquivalent)
+  };
+}
+function round(value, decimals) {
+  if (!Number.isFinite(value) || value === 0) return 0;
+  const factor = Math.pow(10, decimals);
+  return Math.round(value * factor) / factor;
+}
+
+// src/storage/db.ts
 var ReporterDatabase = class {
   db;
   constructor(customPath) {
@@ -6106,6 +6203,196 @@ var ReporterDatabase = class {
       costUsd: Math.round((Number(r.costUsd) || 0) * 1e3) / 1e3
     })).reverse();
   }
+  getPeriodStats(type, offset = 0, refDate = /* @__PURE__ */ new Date()) {
+    const refYear = refDate.getUTCFullYear();
+    const refMonth = refDate.getUTCMonth();
+    const refDateNum = refDate.getUTCDate();
+    const refDay = refDate.getUTCDay();
+    let start;
+    let end;
+    let prevStart;
+    let prevEnd;
+    let label = "";
+    let rangeLabel = "";
+    let prevLabel = "";
+    const buckets = [];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+    const shortMonthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    if (type === "week") {
+      const diffToMon = (refDay === 0 ? -6 : 1) - refDay;
+      const mondayOffset = diffToMon + offset * 7;
+      start = new Date(Date.UTC(refYear, refMonth, refDateNum + mondayOffset, 0, 0, 0, 0));
+      end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + 6, 23, 59, 59, 999));
+      prevStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() - 7, 0, 0, 0, 0));
+      prevEnd = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() - 7, 23, 59, 59, 999));
+      const isoWeek = getISOWeekNumber(start);
+      const startStr = `${shortMonthNames[start.getUTCMonth()]} ${start.getUTCDate()}`;
+      const endStr = `${shortMonthNames[end.getUTCMonth()]} ${end.getUTCDate()}, ${end.getUTCFullYear()}`;
+      label = `Week ${isoWeek} \xB7 ${startStr} \u2013 ${endStr}`;
+      rangeLabel = `${start.toISOString().slice(0, 10)} \u2192 ${end.toISOString().slice(0, 10)}`;
+      prevLabel = `Week ${getISOWeekNumber(prevStart)}`;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + i, 0, 0, 0, 0));
+        const key = d.toISOString().slice(0, 10);
+        buckets.push({
+          cached: 0,
+          costUsd: 0,
+          input: 0,
+          key,
+          label: `${dayNames[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, "0")}`,
+          output: 0,
+          requests: 0,
+          subLabel: dayNames[d.getUTCDay()],
+          tokens: 0
+        });
+      }
+    } else if (type === "month") {
+      start = new Date(Date.UTC(refYear, refMonth + offset, 1, 0, 0, 0, 0));
+      end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+      prevStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 1, 1, 0, 0, 0, 0));
+      prevEnd = new Date(Date.UTC(prevStart.getUTCFullYear(), prevStart.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+      label = `${monthNames[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
+      rangeLabel = `${start.toISOString().slice(0, 10)} \u2192 ${end.toISOString().slice(0, 10)}`;
+      prevLabel = `${shortMonthNames[prevStart.getUTCMonth()]} ${prevStart.getUTCFullYear()}`;
+      const daysInMonth = end.getUTCDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), i, 0, 0, 0, 0));
+        const key = d.toISOString().slice(0, 10);
+        buckets.push({
+          cached: 0,
+          costUsd: 0,
+          input: 0,
+          key,
+          label: String(i).padStart(2, "0"),
+          output: 0,
+          requests: 0,
+          subLabel: dayNames[d.getUTCDay()],
+          tokens: 0
+        });
+      }
+    } else {
+      const targetYear = refYear + offset;
+      start = new Date(Date.UTC(targetYear, 0, 1, 0, 0, 0, 0));
+      end = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
+      prevStart = new Date(Date.UTC(targetYear - 1, 0, 1, 0, 0, 0, 0));
+      prevEnd = new Date(Date.UTC(targetYear - 1, 11, 31, 23, 59, 59, 999));
+      label = `Year ${targetYear}`;
+      rangeLabel = `${start.toISOString().slice(0, 10)} \u2192 ${end.toISOString().slice(0, 10)}`;
+      prevLabel = `Year ${targetYear - 1}`;
+      for (let m = 0; m < 12; m++) {
+        const key = `${targetYear}-${String(m + 1).padStart(2, "0")}`;
+        buckets.push({
+          cached: 0,
+          costUsd: 0,
+          input: 0,
+          key,
+          label: shortMonthNames[m],
+          output: 0,
+          requests: 0,
+          subLabel: monthNames[m],
+          tokens: 0
+        });
+      }
+    }
+    const since = start.toISOString();
+    const until = end.toISOString();
+    const bucketSubstrLen = type === "year" ? 7 : 10;
+    const bucketQuery = `
+      SELECT
+        substr(occurredAt, 1, ${bucketSubstrLen}) as bucketKey,
+        COUNT(*) as requests,
+        COALESCE(SUM(tokensTotal), 0) as tokens,
+        COALESCE(SUM(tokensInput), 0) as input,
+        COALESCE(SUM(tokensOutput), 0) as output,
+        COALESCE(SUM(tokensCacheRead + tokensCacheWrite), 0) as cached,
+        COALESCE(SUM(costUsd), 0) as costUsd
+      FROM events
+      WHERE type = 'usage' AND occurredAt >= ? AND occurredAt <= ?
+      GROUP BY bucketKey
+    `;
+    const bucketRows = this.db.prepare(bucketQuery).all(since, until);
+    const bucketMap = /* @__PURE__ */ new Map();
+    for (const r of bucketRows) {
+      bucketMap.set(r.bucketKey, r);
+    }
+    for (const b of buckets) {
+      const match = bucketMap.get(b.key);
+      if (match) {
+        b.requests = Number(match.requests) || 0;
+        b.tokens = Number(match.tokens) || 0;
+        b.input = Number(match.input) || 0;
+        b.output = Number(match.output) || 0;
+        b.cached = Number(match.cached) || 0;
+        b.costUsd = Math.round((Number(match.costUsd) || 0) * 1e3) / 1e3;
+      }
+    }
+    const summary = this.getSummary({ since, until });
+    const prevSummary = this.getSummary({
+      since: prevStart.toISOString(),
+      until: prevEnd.toISOString()
+    });
+    let tokenDeltaPercent;
+    if (prevSummary.totalTokens > 0) {
+      tokenDeltaPercent = Math.round(
+        (summary.totalTokens - prevSummary.totalTokens) / prevSummary.totalTokens * 1e3
+      ) / 10;
+    }
+    let costDeltaPercent;
+    if (prevSummary.totalCostUsd > 0) {
+      costDeltaPercent = Math.round(
+        (summary.totalCostUsd - prevSummary.totalCostUsd) / prevSummary.totalCostUsd * 1e3
+      ) / 10;
+    }
+    const harnesses = this.getHarnessSummaries({ since, until });
+    const models = this.getModelSummaries({ limit: 10, since, until });
+    const projects = this.getProjectSummaries({ limit: 10, since, until });
+    const funMetrics = computeFunMetrics(summary);
+    return {
+      buckets,
+      costDeltaPercent,
+      funMetrics,
+      harnesses,
+      label,
+      models,
+      offset,
+      prevLabel,
+      prevSummary,
+      projects,
+      rangeLabel,
+      since,
+      summary,
+      tokenDeltaPercent,
+      type,
+      until
+    };
+  }
   getRecentEvents(options) {
     const conditions = ["type = 'usage'"];
     const params = [];
@@ -6219,6 +6506,13 @@ function getDatabase() {
     defaultDb = new ReporterDatabase();
   }
   return defaultDb;
+}
+function getISOWeekNumber(d) {
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayNum = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  return Math.ceil(((target.getTime() - yearStart.getTime()) / 864e5 + 1) / 7);
 }
 
 // src/storage/cursors.ts
@@ -7131,6 +7425,154 @@ function stopService() {
   }
 }
 
+// src/ui/stats-render.ts
+function renderStatsLines(stats, options = {}) {
+  const cols = options.cols ?? (process.stdout.columns || 80);
+  const isInteractive = Boolean(options.interactive);
+  const cardW = Math.min(cols - 4, 110);
+  const lines = [];
+  const tabWeek = stats.type === "week" ? c.bold(c.gold("\u25CF [W] Week")) : c.dim("\u25CB [w] Week");
+  const tabMonth = stats.type === "month" ? c.bold(c.gold("\u25CF [M] Month")) : c.dim("\u25CB [m] Month");
+  const tabYear = stats.type === "year" ? c.bold(c.gold("\u25CF [Y] Year")) : c.dim("\u25CB [y] Year");
+  const navLeft = isInteractive ? c.dim("\u25C4 [h/\u2190] ") : "";
+  const navRight = isInteractive ? c.dim(" [l/\u2192] \u25BA") : "";
+  const periodTitle = `${navLeft}${c.bold(c.cyan(`\u{1F4C5} ${stats.label}`))}${navRight}`;
+  const rangeTag = c.dim(`(${stats.rangeLabel})`);
+  lines.push(`  ${c.bold(c.cyan("\u2726 AI-Reporter"))} ${c.dim("\xB7")} ${c.bold("Usage & Spend Statistics")}  ${c.dim("\u2502")}  ${tabWeek}  ${tabMonth}  ${tabYear}`);
+  lines.push(`  ${periodTitle}  ${rangeTag}`);
+  lines.push("");
+  const s = stats.summary;
+  const tokenDelta = stats.tokenDeltaPercent !== void 0 ? stats.tokenDeltaPercent >= 0 ? c.orange(` \u25B2 +${stats.tokenDeltaPercent}%`) : c.green(` \u25BC ${stats.tokenDeltaPercent}%`) : "";
+  const costDelta = stats.costDeltaPercent !== void 0 ? stats.costDeltaPercent >= 0 ? c.orange(` \u25B2 +${stats.costDeltaPercent}%`) : c.green(` \u25BC ${stats.costDeltaPercent}%`) : "";
+  const prevNote = stats.prevLabel ? c.dim(` vs ${stats.prevLabel}`) : "";
+  const overviewRows = [
+    `Total Tokens:  ${c.bold(compactNumber(s.totalTokens))} tokens${tokenDelta}${prevNote}  ${c.dim("across")} ${compactNumber(s.totalRequests)} requests (${compactNumber(s.totalSessions)} sessions)`,
+    `Total Spend:   ${c.bold(c.gold(formatUsd(s.totalCostUsd)))}${costDelta}${prevNote}  ${c.dim("\xB7")}  Saved by Cache: ${c.green(formatUsd(s.totalCostSavingsUsd))}`,
+    `Token Split:   ${compactNumber(s.inputTokens)} in  ${c.dim("\xB7")}  ${compactNumber(s.outputTokens)} out  ${c.dim("\xB7")}  ${compactNumber(s.cacheReadTokens)} cache read  ${c.dim("\xB7")}  ${compactNumber(s.cacheWriteTokens)} cache write`
+  ];
+  const overviewBox = box(
+    { accent: "cyan", title: `${stats.label} Overview` },
+    overviewRows,
+    cardW
+  );
+  for (const l of overviewBox) lines.push(`  ${l}`);
+  lines.push("");
+  const f = stats.funMetrics;
+  const funRows = [];
+  const lakesFmt = f.drownLakes >= 0.01 ? f.drownLakes.toFixed(4) : f.drownLakes >= 1e-4 ? f.drownLakes.toFixed(5) : f.drownLakes.toFixed(6);
+  funRows.push(
+    `${c.bold(c.cyan('\u{1F30A} Water Footprint ("Drown Lakes"):'))} ${c.bold(c.gold(`${lakesFmt} lakes drained`))} ${c.dim(`[${f.lakeBadge}]`)}`
+  );
+  funRows.push(
+    `   \u{1F4A7} ${compactNumber(f.waterLiters)} L cooling water evaporated  ${c.dim("\u2248")}  \u{1F3CA} ${f.olympicPools} Olympic pools  ${c.dim("\xB7")}  \u{1F6C1} ${compactNumber(f.bathtubs)} bathtubs  ${c.dim("\xB7")}  \u{1F964} ${compactNumber(f.waterBottles)} bottles`
+  );
+  funRows.push(`   ${c.italic(f.lakeCommentary)}`);
+  funRows.push("");
+  funRows.push(
+    `${c.bold(c.gold("\u26A1 Compute Energy & Hardware:"))} ${c.bold(`${f.kwh} kWh`)}`
+  );
+  funRows.push(
+    `   \u{1F35E} ${compactNumber(f.toastsRun)} slices of bread toasted  ${c.dim("\xB7")}  \u{1F4F1} ${compactNumber(f.smartphonesCharged)} phone charges  ${c.dim("\xB7")}  \u{1F4A1} ${compactNumber(f.ledLightbulbHours)}h LED lightbulb`
+  );
+  funRows.push(
+    `   \u{1F331} ${f.co2Kg} kg CO\u2082 emitted  ${c.dim("\u2248")}  \u{1F697} ${compactNumber(f.carKmDriven)} km driven in car  ${c.dim("\xB7")}  \u{1F333} ${f.treeYearsToOffset} tree-years to absorb`
+  );
+  funRows.push("");
+  const typingFmt = f.humanTypingDays >= 1 ? `${f.humanTypingDays} continuous days (${compactNumber(f.humanTypingHours)}h)` : `${f.humanTypingHours} continuous hours`;
+  funRows.push(
+    `${c.bold(c.purple("\u2328\uFE0F  Human Scale & Literature:"))} ${compactNumber(f.wordsEquivalent)} words generated`
+  );
+  funRows.push(
+    `   \u270D\uFE0F  Typing equivalent: ${typingFmt} non-stop at 50 WPM`
+  );
+  funRows.push(
+    `   \u{1F4DA} ${f.warAndPeaceCopies}x copies of War & Peace  ${c.dim("\xB7")}  \u{1F9D9} ${f.harryPotterSeries}x complete Harry Potter box sets`
+  );
+  funRows.push("");
+  funRows.push(
+    `${c.bold(c.teal("\u2615 Developer Fuel & Cost Equivalents:"))}`
+  );
+  funRows.push(
+    `   \u2615 ${compactNumber(f.coffeesEquivalent)} specialty oat flat whites  ${c.dim("\xB7")}  \u{1F355} ${compactNumber(f.pizzasEquivalent)} artisan pizzas`
+  );
+  const funBox = box(
+    { accent: "gold", title: "\u{1F30A} Fun Metrics: Environmental & Physical Footprint" },
+    funRows,
+    cardW
+  );
+  for (const l of funBox) lines.push(`  ${l}`);
+  lines.push("");
+  const maxTokens = Math.max(...stats.buckets.map((b) => b.tokens), 1);
+  const activeBuckets = stats.buckets.filter((b) => b.tokens > 0 || stats.type === "week" || stats.type === "year");
+  if (activeBuckets.length > 0) {
+    const histTitle = stats.type === "week" ? "\u2726 Daily Breakdown (This Week):" : stats.type === "month" ? `\u2726 Daily Activity (${stats.label}):` : `\u2726 Monthly Activity (${stats.label}):`;
+    lines.push(`  ${c.bold(c.cyan(histTitle))}`);
+    const displayBuckets = stats.type === "month" && activeBuckets.length > 16 ? stats.buckets.filter((b) => b.tokens > 0) : activeBuckets;
+    const gaugeSize = Math.max(10, Math.min(22, cols - 65));
+    for (const b of displayBuckets) {
+      const frac = b.tokens / maxTokens;
+      const bar = gauge(frac, gaugeSize, c.cyan);
+      const isToday = b.key === (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      const keyFmt = isToday ? c.bold(c.gold(`${b.label}*`)) : c.dim(b.label);
+      lines.push(
+        `    ${pad(keyFmt, 12)} ${bar}  ${compactNumber(b.tokens).padStart(7)} tokens  ${c.gold(formatUsd(b.costUsd)).padStart(8)}  ${c.dim(`(${compactNumber(b.requests)} reqs)`)}`
+      );
+    }
+    lines.push("");
+  }
+  if (stats.harnesses.length > 0) {
+    lines.push(`  ${c.bold(c.cyan("\u2726 Breakdown by Harness:"))}`);
+    const hRows = stats.harnesses.map((h) => {
+      const info = HARNESS_INFO[h.harness];
+      const label = info ? `${info.color(info.glyph)} ${info.name}` : h.harness;
+      return [
+        label,
+        compactNumber(h.requests),
+        compactNumber(h.tokens),
+        compactNumber(h.input),
+        compactNumber(h.output),
+        c.dim(compactNumber(h.cached)),
+        c.bold(c.gold(formatUsd(h.costUsd))),
+        c.green(formatUsd(h.costSavingsUsd))
+      ];
+    });
+    const table = renderTable(
+      hRows,
+      ["Harness", "Requests", "Tokens", "In", "Out", "Cached", "Cost", "Savings"]
+    );
+    for (const l of table.split("\n")) {
+      lines.push(`  ${l}`);
+    }
+    lines.push("");
+  }
+  if (stats.models.length > 0) {
+    lines.push(`  ${c.bold(c.cyan("\u2726 Top Models:"))}`);
+    const mRows = stats.models.slice(0, 6).map((m) => [
+      m.modelName,
+      c.dim(m.modelFamily),
+      compactNumber(m.requests),
+      compactNumber(m.tokens),
+      compactNumber(m.input),
+      compactNumber(m.output),
+      c.dim(compactNumber(m.cached)),
+      c.bold(c.gold(formatUsd(m.costUsd)))
+    ]);
+    const mTable = renderTable(
+      mRows,
+      ["Model", "Family", "Requests", "Tokens", "In", "Out", "Cached", "Cost"]
+    );
+    for (const l of mTable.split("\n")) {
+      lines.push(`  ${l}`);
+    }
+    lines.push("");
+  }
+  if (isInteractive) {
+    const footer = `  ${c.bold("[w]")} Week View  ${c.bold("[m]")} Month View  ${c.bold("[y]")} Year View  ${c.bold("[h/l]")} Prev/Next  ${c.bold("[0]")} Current  ${c.bold("[Tab]")} Live Monitor  ${c.bold("[q]")} Quit`;
+    lines.push(footer);
+  }
+  return lines;
+}
+
 // src/ui/screen.ts
 var HARNESS_INFO = {
   antigravity: { color: c.purple, glyph: "\u25E0", name: "Antigravity" },
@@ -7165,9 +7607,18 @@ var Screen = class {
   onExit;
   lastKnownTotalRequests = -1;
   isScanning = false;
+  activeTab = "watch";
+  activePeriod = "month";
+  periodOffset = 0;
   constructor(watcher, options = {}) {
     this.watcher = watcher;
     this.options = options;
+    if (options.initialTab) {
+      this.activeTab = options.initialTab;
+    }
+    if (options.initialPeriod) {
+      this.activePeriod = options.initialPeriod;
+    }
     if (options.mode === "attached") {
       this.statusMessage = options.attachedPid ? `Live stream active (PID ${options.attachedPid})` : "Live stream active";
     }
@@ -7206,21 +7657,57 @@ var Screen = class {
           process.exit(0);
         } else if (key.name === "q") {
           this.stop();
-        } else if (key.name === "p") {
-          const paused = this.watcher.togglePause();
-          this.statusMessage = paused ? "Watcher paused" : "Watcher resumed";
+        } else if (key.name === "tab") {
+          this.activeTab = this.activeTab === "watch" ? "stats" : "watch";
           this.render();
-        } else if (key.name === "s") {
-          if (this.isScanning) return;
-          this.statusMessage = "Immediate scan triggered...";
+        } else if (key.name === "1") {
+          this.activeTab = "watch";
           this.render();
-          if (this.isAttached()) {
-            await this.triggerScan();
-          } else {
-            this.watcher.wake();
+        } else if (key.name === "2") {
+          this.activeTab = "stats";
+          this.render();
+        } else if (this.activeTab === "stats") {
+          if (key.name === "w") {
+            this.activePeriod = "week";
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "m") {
+            this.activePeriod = "month";
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "y") {
+            this.activePeriod = "year";
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "left" || key.name === "h") {
+            this.periodOffset -= 1;
+            this.render();
+          } else if (key.name === "right" || key.name === "l") {
+            this.periodOffset += 1;
+            this.render();
+          } else if (key.name === "0" || key.name === "t") {
+            this.periodOffset = 0;
+            this.render();
+          } else if (key.name === "r") {
+            this.render();
           }
-        } else if (key.name === "r") {
-          this.render();
+        } else {
+          if (key.name === "p") {
+            const paused = this.watcher.togglePause();
+            this.statusMessage = paused ? "Watcher paused" : "Watcher resumed";
+            this.render();
+          } else if (key.name === "s") {
+            if (this.isScanning) return;
+            this.statusMessage = "Immediate scan triggered...";
+            this.render();
+            if (this.isAttached()) {
+              await this.triggerScan();
+            } else {
+              this.watcher.wake();
+            }
+          } else if (key.name === "r") {
+            this.render();
+          }
         }
       });
     }
@@ -7275,6 +7762,25 @@ var Screen = class {
     const bannerSubtitle = this.isAttached() ? "24/7 AI Token & Spend Tracker \xB7 Live Monitor" : "24/7 AI Token & Spend Tracker";
     lines.push(banner(bannerSubtitle, cols));
     lines.push("");
+    const tab1 = this.activeTab === "watch" ? c.bold(c.cyan("\u25CF [1] Live Monitor")) : c.dim("\u25CB [1] Live Monitor");
+    const tab2 = this.activeTab === "stats" ? c.bold(c.gold("\u25CF [2] Statistics (Month/Week/Year)")) : c.dim("\u25CB [2] Statistics (Month/Week/Year)");
+    const tabHint = c.dim("[Press Tab or 1/2 to switch]");
+    lines.push(`  ${tab1}   ${tab2}   ${tabHint}`);
+    lines.push("");
+    if (this.activeTab === "stats") {
+      const stats = db.getPeriodStats(this.activePeriod, this.periodOffset);
+      const statsLines = renderStatsLines(stats, {
+        activeTab: this.activePeriod,
+        cols,
+        interactive: true
+      });
+      for (const sl of statsLines) {
+        lines.push(sl);
+      }
+      const screenBuffer2 = lines.slice(0, rows).join("\n");
+      process.stdout.write(`\x1B[H\x1B[2J${screenBuffer2}`);
+      return;
+    }
     const remainingMs = Math.max(0, this.nextScanAt - now);
     const intervalMs = this.watcher.currentInterval();
     const fraction = Math.min(1, Math.max(0, 1 - remainingMs / intervalMs));
@@ -7372,7 +7878,7 @@ var Screen = class {
       }
       lines.push("");
     }
-    const footer = `  ${c.bold("q")} Quit  \xB7  ${c.bold("p")} Pause/Resume  \xB7  ${c.bold("s")} Scan Now  \xB7  ${c.bold("r")} Refresh  \xB7  ${c.dim("AI-Reporter running 24/7")}`;
+    const footer = `  ${c.bold("Tab")} Statistics Page  \xB7  ${c.bold("q")} Quit  \xB7  ${c.bold("p")} Pause/Resume  \xB7  ${c.bold("s")} Scan Now  \xB7  ${c.bold("r")} Refresh  \xB7  ${c.dim("AI-Reporter running 24/7")}`;
     lines.push(footer);
     const screenBuffer = lines.slice(0, rows).join("\n");
     process.stdout.write(`\x1B[H\x1B[2J${screenBuffer}`);
@@ -7603,146 +8109,472 @@ function registerService(program3) {
 }
 
 // src/commands/stats.ts
+import { writeFileSync as writeFileSync5 } from "node:fs";
+
+// src/ui/html-report.ts
+function generateHtmlStatsReport(weekStats, monthStats, yearStats) {
+  const generatedAt = (/* @__PURE__ */ new Date()).toLocaleString();
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Reporter \u2726 Token & Spend Statistics</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-dim: #8b949e;
+      --cyan: #58a6ff;
+      --gold: #eab619;
+      --green: #3fb950;
+      --purple: #bc8cff;
+      --teal: #39c5bb;
+      --orange: #f0883e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1080px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .brand { font-size: 24px; font-weight: bold; color: var(--gold); }
+    .brand span { color: var(--cyan); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
+    }
+    .view-container { display: none; }
+    .view-container.active { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .card-title { font-size: 13px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+    .card-value { font-size: 26px; font-weight: bold; color: var(--cyan); }
+    .card-value.gold { color: var(--gold); }
+    .card-value.green { color: var(--green); }
+    .card-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+    
+    .fun-banner {
+      background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(234, 182, 25, 0.1));
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .fun-title { font-size: 18px; font-weight: bold; color: var(--gold); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .fun-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .fun-item { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; }
+    .fun-item-val { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 2px; }
+    .fun-item-desc { font-size: 12px; color: var(--text-dim); }
+    .commentary { margin-top: 14px; font-style: italic; color: var(--teal); font-size: 13px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-dim); font-size: 12px; text-transform: uppercase; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+    .chart-bar-bg { background: rgba(255, 255, 255, 0.08); border-radius: 4px; height: 16px; overflow: hidden; }
+    .chart-bar-fill { background: var(--cyan); height: 100%; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="brand">\u2726 AI-<span>Reporter</span></div>
+        <div style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">24/7 AI Token, Spend & Environmental Analytics</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-dim);">Generated ${generatedAt}</div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('week')">\u{1F4C5} Week View</button>
+      <button class="tab-btn" onclick="switchTab('month')">\u{1F4C5} Month View</button>
+      <button class="tab-btn" onclick="switchTab('year')">\u{1F4C5} Year View</button>
+    </div>
+
+    ${renderViewHtml("week", weekStats, true)}
+    ${renderViewHtml("month", monthStats, false)}
+    ${renderViewHtml("year", yearStats, false)}
+  </div>
+
+  <script>
+    function switchTab(viewId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('view-' + viewId).classList.add('active');
+    }
+  </script>
+</body>
+</html>`;
+}
+function renderViewHtml(id, s, isActive) {
+  const f = s.funMetrics;
+  const maxBucket = Math.max(...s.buckets.map((b) => b.tokens), 1);
+  return `
+    <div id="view-${id}" class="view-container ${isActive ? "active" : ""}">
+      <h2 style="font-size: 20px; margin-bottom: 16px; color: #fff;">${s.label} <span style="font-size: 13px; color: var(--text-dim); font-weight: normal;">(${s.rangeLabel})</span></h2>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-title">Total Tokens</div>
+          <div class="card-value">${compactNumber(s.summary.totalTokens)}</div>
+          <div class="card-sub">${compactNumber(s.summary.totalRequests)} requests across ${compactNumber(s.summary.totalSessions)} sessions</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estimated Spend</div>
+          <div class="card-value gold">${formatUsd(s.summary.totalCostUsd)}</div>
+          <div class="card-sub">Saved ${formatUsd(s.summary.totalCostSavingsUsd)} with prompt cache</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Prompt vs Output</div>
+          <div class="card-value">${compactNumber(s.summary.inputTokens)} in / ${compactNumber(s.summary.outputTokens)} out</div>
+          <div class="card-sub">${compactNumber(s.summary.cacheReadTokens)} tokens read from cache</div>
+        </div>
+      </div>
+
+      <div class="fun-banner">
+        <div class="fun-title">\u{1F30A} Environmental & Fun Equivalencies <span style="font-size: 12px; background: rgba(234, 182, 25, 0.2); padding: 2px 8px; border-radius: 12px; color: var(--gold);">${f.lakeBadge}</span></div>
+        <div class="fun-grid">
+          <div class="fun-item">
+            <div class="fun-item-val" style="color: var(--cyan);">${f.drownLakes >= 1e-3 ? f.drownLakes.toFixed(4) : f.drownLakes.toFixed(6)} Lakes</div>
+            <div class="fun-item-desc">Drowned/drained by GPU cooling (${compactNumber(f.waterLiters)} L \u2248 ${compactNumber(f.bathtubs)} bathtubs)</div>
+          </div>
+          <div class="fun-item">
+            <div class="fun-item-val" style="color: var(--gold);">${compactNumber(f.toastsRun)} Slices of Toast</div>
+            <div class="fun-item-desc">Compute electricity (${f.kwh} kWh \u2248 ${compactNumber(f.smartphonesCharged)} phone charges)</div>
+          </div>
+          <div class="fun-item">
+            <div class="fun-item-val" style="color: var(--purple);">${f.warAndPeaceCopies}x War & Peace</div>
+            <div class="fun-item-desc">Typing equivalent: ${f.humanTypingHours}h human typing non-stop</div>
+          </div>
+          <div class="fun-item">
+            <div class="fun-item-val" style="color: var(--teal);">${compactNumber(f.coffeesEquivalent)} Flat Whites</div>
+            <div class="fun-item-desc">Equivalent developer fuel (${compactNumber(f.pizzasEquivalent)} artisan pizzas)</div>
+          </div>
+        </div>
+        <div class="commentary">${f.lakeCommentary}</div>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">Activity Breakdown (${s.type === "week" ? "Days" : s.type === "month" ? "Daily" : "Months"})</div>
+        <table>
+          <thead>
+            <tr><th>Period</th><th>Volume</th><th>Tokens</th><th>Requests</th><th>Cost</th></tr>
+          </thead>
+          <tbody>
+            ${s.buckets.map((b) => {
+    const pct = Math.round(b.tokens / maxBucket * 100);
+    return `<tr>
+                  <td style="font-weight: 500;">${b.label}</td>
+                  <td style="width: 35%;"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: ${pct}%;"></div></div></td>
+                  <td>${compactNumber(b.tokens)}</td>
+                  <td>${compactNumber(b.requests)}</td>
+                  <td style="color: var(--gold);">${formatUsd(b.costUsd)}</td>
+                </tr>`;
+  }).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      ${s.harnesses.length > 0 ? `<div class="card">
+        <div class="card-title">Breakdown by AI Harness</div>
+        <table>
+          <thead><tr><th>Harness</th><th>Requests</th><th>Tokens</th><th>Prompt</th><th>Output</th><th>Cost</th></tr></thead>
+          <tbody>
+            ${s.harnesses.map(
+    (h) => `<tr>
+              <td><strong>${h.harness}</strong></td>
+              <td>${compactNumber(h.requests)}</td>
+              <td>${compactNumber(h.tokens)}</td>
+              <td>${compactNumber(h.input)}</td>
+              <td>${compactNumber(h.output)}</td>
+              <td style="color: var(--gold);">${formatUsd(h.costUsd)}</td>
+            </tr>`
+  ).join("")}
+          </tbody>
+        </table>
+      </div>` : ""}
+    </div>
+  `;
+}
+
+// src/commands/stats.ts
 function registerStats(program3) {
-  program3.command("stats").alias("summary").description("View token usage, spending, and model analytics").option("--today", "show usage for today only").option("--yesterday", "show usage for yesterday only").option("--week", "show usage for the last 7 days").option("--month", "show usage for the last 30 days").option("--all", "show all-time usage (default)").option("--json", "output stats as raw JSON").action((options) => {
-    const db = getDatabase();
-    const now = /* @__PURE__ */ new Date();
-    let since;
-    let until;
-    let timeframeLabel = "All Time";
-    if (options.today) {
-      const d = new Date(now);
-      d.setHours(0, 0, 0, 0);
-      since = d.toISOString();
-      timeframeLabel = "Today";
-    } else if (options.yesterday) {
-      const start = new Date(now);
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setDate(end.getDate() - 1);
-      end.setHours(23, 59, 59, 999);
-      since = start.toISOString();
-      until = end.toISOString();
-      timeframeLabel = "Yesterday";
-    } else if (options.week) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 7);
-      since = d.toISOString();
-      timeframeLabel = "Last 7 Days";
-    } else if (options.month) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 30);
-      since = d.toISOString();
-      timeframeLabel = "Last 30 Days";
-    }
-    const summary = db.getSummary({ since, until });
-    const harnesses = db.getHarnessSummaries({ since, until });
-    const models = db.getModelSummaries({ since, until, limit: 10 });
-    const projects = db.getProjectSummaries({ since, until, limit: 10 });
-    const daily = db.getDailyUsage(14);
-    if (options.json) {
-      ui.json({
-        daily,
-        harnesses,
-        models,
-        projects,
-        summary,
-        timeframe: timeframeLabel
-      });
-      return;
-    }
-    ui.intro(`Usage & Spend Statistics \xB7 ${timeframeLabel}`);
-    const overviewRows = [
-      ["Total Tokens", `${c.bold(compactNumber(summary.totalTokens))} tokens`],
-      ["Prompt Tokens (Input)", `${compactNumber(summary.inputTokens)} tokens`],
-      ["Completion Tokens (Output)", `${compactNumber(summary.outputTokens)} tokens`],
-      ["Cache Read Tokens", `${compactNumber(summary.cacheReadTokens)} tokens`],
-      ["Cache Write Tokens", `${compactNumber(summary.cacheWriteTokens)} tokens`],
-      ["Total Estimated Cost", c.bold(c.gold(formatUsd(summary.totalCostUsd)))],
-      ["Saved by Prompt Caching", c.green(formatUsd(summary.totalCostSavingsUsd))],
-      ["Total Requests Recorded", `${compactNumber(summary.totalRequests)} requests`],
-      ["Active Sessions", `${compactNumber(summary.totalSessions)} sessions`]
-    ];
-    if (summary.firstEventAt) {
-      overviewRows.push([
-        "Date Range",
-        `${new Date(summary.firstEventAt).toLocaleDateString()} \u2192 ${new Date(summary.lastEventAt || summary.firstEventAt).toLocaleDateString()}`
-      ]);
-    }
-    ui.card("Overall Summary", overviewRows.map(([k, v]) => `${c.dim(k)}: ${v}`).join("\n"));
-    ui.line();
-    if (harnesses.length > 0) {
-      ui.line(c.bold(c.cyan("\u2726 Breakdown by Harness:")));
-      const hRows = harnesses.map((h) => {
-        const info = HARNESS_INFO[h.harness];
-        const label = info ? `${info.color(info.glyph)} ${info.name}` : h.harness;
-        return [
-          label,
-          compactNumber(h.requests),
-          compactNumber(h.tokens),
-          compactNumber(h.input),
-          compactNumber(h.output),
-          c.dim(compactNumber(h.cached)),
-          c.bold(c.gold(formatUsd(h.costUsd))),
-          c.green(formatUsd(h.costSavingsUsd))
-        ];
-      });
-      ui.table(
-        hRows,
-        ["Harness", "Requests", "Tokens", "In", "Out", "Cached", "Cost", "Savings"]
+  const statsCmd = program3.command("stats").alias("summary").description("View token usage, spending, and model analytics with fun environmental metrics").option("--today", "show usage for today only").option("--yesterday", "show usage for yesterday only").option("-w, --week", "show usage for this week (Mon-Sun breakdown)").option("-m, --month", "show usage for this month (daily breakdown)").option("-y, --year", "show usage for this year (monthly breakdown)").option("--all", "show all-time usage (default)").option("-i, --interactive", "launch full-terminal interactive statistics page").option("--page", "alias for --interactive").option("--html [filename]", "export standalone interactive HTML dashboard").option("--json", "output stats as raw JSON").action(
+    async (options) => {
+      const db = getDatabase();
+      if (options.html) {
+        const filename = typeof options.html === "string" ? options.html : "ai-reporter-stats.html";
+        const weekStats = db.getPeriodStats("week");
+        const monthStats = db.getPeriodStats("month");
+        const yearStats = db.getPeriodStats("year");
+        const html = generateHtmlStatsReport(weekStats, monthStats, yearStats);
+        writeFileSync5(filename, html, "utf8");
+        ui.success(`HTML statistics dashboard exported to ${c.bold(filename)}`);
+        return;
+      }
+      if (options.interactive || options.page) {
+        const initialPeriod = options.week ? "week" : options.year ? "year" : "month";
+        await launchInteractiveStats(initialPeriod);
+        return;
+      }
+      if (options.week || options.month || options.year) {
+        const periodType = options.week ? "week" : options.year ? "year" : "month";
+        const periodStats = db.getPeriodStats(periodType, 0);
+        if (options.json) {
+          ui.json(periodStats);
+          return;
+        }
+        const lines = renderStatsLines(periodStats, {
+          activeTab: periodType,
+          cols: process.stdout.columns || 80,
+          interactive: false
+        });
+        for (const line of lines) {
+          console.log(line);
+        }
+        ui.line();
+        ui.outro("Run 'ai-reporter stats -i' to explore periods interactively.");
+        return;
+      }
+      const now = /* @__PURE__ */ new Date();
+      let since;
+      let until;
+      let timeframeLabel = "All Time";
+      if (options.today) {
+        const d = new Date(now);
+        d.setHours(0, 0, 0, 0);
+        since = d.toISOString();
+        timeframeLabel = "Today";
+      } else if (options.yesterday) {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 1);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(now);
+        end.setDate(end.getDate() - 1);
+        end.setHours(23, 59, 59, 999);
+        since = start.toISOString();
+        until = end.toISOString();
+        timeframeLabel = "Yesterday";
+      }
+      const summary = db.getSummary({ since, until });
+      const funMetrics = computeFunMetrics(summary);
+      const harnesses = db.getHarnessSummaries({ since, until });
+      const models = db.getModelSummaries({ limit: 10, since, until });
+      const projects = db.getProjectSummaries({ limit: 10, since, until });
+      const daily = db.getDailyUsage(14);
+      if (options.json) {
+        ui.json({
+          daily,
+          funMetrics,
+          harnesses,
+          models,
+          projects,
+          summary,
+          timeframe: timeframeLabel
+        });
+        return;
+      }
+      ui.intro(`Usage & Spend Statistics \xB7 ${timeframeLabel}`);
+      const overviewRows = [
+        ["Total Tokens", `${c.bold(compactNumber(summary.totalTokens))} tokens`],
+        ["Prompt Tokens (Input)", `${compactNumber(summary.inputTokens)} tokens`],
+        ["Completion Tokens (Output)", `${compactNumber(summary.outputTokens)} tokens`],
+        ["Cache Read Tokens", `${compactNumber(summary.cacheReadTokens)} tokens`],
+        ["Cache Write Tokens", `${compactNumber(summary.cacheWriteTokens)} tokens`],
+        ["Total Estimated Cost", c.bold(c.gold(formatUsd(summary.totalCostUsd)))],
+        ["Saved by Prompt Caching", c.green(formatUsd(summary.totalCostSavingsUsd))],
+        ["Total Requests Recorded", `${compactNumber(summary.totalRequests)} requests`],
+        ["Active Sessions", `${compactNumber(summary.totalSessions)} sessions`]
+      ];
+      if (summary.firstEventAt) {
+        overviewRows.push([
+          "Date Range",
+          `${new Date(summary.firstEventAt).toLocaleDateString()} \u2192 ${new Date(summary.lastEventAt || summary.firstEventAt).toLocaleDateString()}`
+        ]);
+      }
+      ui.card("Overall Summary", overviewRows.map(([k, v]) => `${c.dim(k)}: ${v}`).join("\n"));
+      ui.line();
+      const cardW = Math.min((process.stdout.columns || 80) - 4, 110);
+      const f = funMetrics;
+      const lakesFmt = f.drownLakes >= 0.01 ? f.drownLakes.toFixed(4) : f.drownLakes >= 1e-4 ? f.drownLakes.toFixed(5) : f.drownLakes.toFixed(6);
+      const funLines = [
+        `${c.bold(c.cyan('\u{1F30A} Water Footprint ("Drown Lakes"):'))} ${c.bold(c.gold(`${lakesFmt} lakes drained`))} ${c.dim(`[${f.lakeBadge}]`)}`,
+        `   \u{1F4A7} ${compactNumber(f.waterLiters)} L cooling water evaporated  ${c.dim("\u2248")}  \u{1F3CA} ${f.olympicPools} Olympic pools  ${c.dim("\xB7")}  \u{1F6C1} ${compactNumber(f.bathtubs)} bathtubs  ${c.dim("\xB7")}  \u{1F964} ${compactNumber(f.waterBottles)} bottles`,
+        `   ${c.italic(f.lakeCommentary)}`,
+        "",
+        `${c.bold(c.gold("\u26A1 Compute Energy & Hardware:"))} ${c.bold(`${f.kwh} kWh`)}`,
+        `   \u{1F35E} ${compactNumber(f.toastsRun)} slices of bread toasted  ${c.dim("\xB7")}  \u{1F4F1} ${compactNumber(f.smartphonesCharged)} phone charges  ${c.dim("\xB7")}  \u{1F4A1} ${compactNumber(f.ledLightbulbHours)}h LED bulb`,
+        `   \u{1F331} ${f.co2Kg} kg CO\u2082 emitted  ${c.dim("\u2248")}  \u{1F697} ${compactNumber(f.carKmDriven)} km driven in car  ${c.dim("\xB7")}  \u{1F333} ${f.treeYearsToOffset} tree-years to absorb`,
+        "",
+        `${c.bold(c.purple("\u2328\uFE0F  Human Scale & Literature:"))} ${compactNumber(f.wordsEquivalent)} words generated`,
+        `   \u270D\uFE0F  Typing equivalent: ${f.humanTypingDays >= 1 ? `${f.humanTypingDays} days` : `${f.humanTypingHours}h`} non-stop at 50 WPM`,
+        `   \u{1F4DA} ${f.warAndPeaceCopies}x War & Peace  ${c.dim("\xB7")}  \u{1F9D9} ${f.harryPotterSeries}x complete Harry Potter box sets`,
+        "",
+        `${c.bold(c.teal("\u2615 Developer Fuel & Cost:"))} \u2615 ${compactNumber(f.coffeesEquivalent)} flat whites  ${c.dim("\xB7")}  \u{1F355} ${compactNumber(f.pizzasEquivalent)} artisan pizzas`
+      ];
+      const funBox = box(
+        { accent: "gold", title: "\u{1F30A} Fun Metrics: Environmental & Physical Footprint" },
+        funLines,
+        cardW
       );
-      ui.line();
-    }
-    if (models.length > 0) {
-      ui.line(c.bold(c.cyan("\u2726 Top Models:")));
-      const mRows = models.map((m) => [
-        m.modelName,
-        c.dim(m.modelFamily),
-        compactNumber(m.requests),
-        compactNumber(m.tokens),
-        compactNumber(m.input),
-        compactNumber(m.output),
-        c.dim(compactNumber(m.cached)),
-        c.bold(c.gold(formatUsd(m.costUsd)))
-      ]);
-      ui.table(
-        mRows,
-        ["Model", "Family", "Requests", "Tokens", "In", "Out", "Cached", "Cost"]
-      );
-      ui.line();
-    }
-    if (projects.length > 0) {
-      ui.line(c.bold(c.cyan("\u2726 Top Projects:")));
-      const pRows = projects.map((p) => [
-        p.projectName,
-        compactNumber(p.requests),
-        compactNumber(p.tokens),
-        c.bold(c.gold(formatUsd(p.costUsd))),
-        p.lastEventAt ? new Date(p.lastEventAt).toLocaleDateString() : "\u2013"
-      ]);
-      ui.table(pRows, ["Project", "Requests", "Tokens", "Cost", "Last Active"]);
-      ui.line();
-    }
-    if (daily.length > 1) {
-      ui.line(c.bold(c.cyan("\u2726 Daily Activity (Last 14 Days):")));
-      const maxTokens = Math.max(...daily.map((d) => d.tokens), 1);
-      for (const day of daily) {
-        const barFraction = day.tokens / maxTokens;
-        const bar = gauge(barFraction, 20, c.cyan);
-        ui.line(
-          `  ${c.dim(day.day)}  ${bar}  ${compactNumber(day.tokens).padStart(7)} tokens  ${c.gold(formatUsd(day.costUsd)).padStart(8)}  ${c.dim(`(${day.requests} reqs)`)}`
-        );
+      for (const l of funBox) {
+        ui.line(`  ${l}`);
       }
       ui.line();
+      if (harnesses.length > 0) {
+        ui.line(c.bold(c.cyan("\u2726 Breakdown by Harness:")));
+        const hRows = harnesses.map((h) => {
+          const info = HARNESS_INFO[h.harness];
+          const label = info ? `${info.color(info.glyph)} ${info.name}` : h.harness;
+          return [
+            label,
+            compactNumber(h.requests),
+            compactNumber(h.tokens),
+            compactNumber(h.input),
+            compactNumber(h.output),
+            c.dim(compactNumber(h.cached)),
+            c.bold(c.gold(formatUsd(h.costUsd))),
+            c.green(formatUsd(h.costSavingsUsd))
+          ];
+        });
+        ui.table(
+          hRows,
+          ["Harness", "Requests", "Tokens", "In", "Out", "Cached", "Cost", "Savings"]
+        );
+        ui.line();
+      }
+      if (models.length > 0) {
+        ui.line(c.bold(c.cyan("\u2726 Top Models:")));
+        const mRows = models.map((m) => [
+          m.modelName,
+          c.dim(m.modelFamily),
+          compactNumber(m.requests),
+          compactNumber(m.tokens),
+          compactNumber(m.input),
+          compactNumber(m.output),
+          c.dim(compactNumber(m.cached)),
+          c.bold(c.gold(formatUsd(m.costUsd)))
+        ]);
+        ui.table(
+          mRows,
+          ["Model", "Family", "Requests", "Tokens", "In", "Out", "Cached", "Cost"]
+        );
+        ui.line();
+      }
+      if (projects.length > 0) {
+        ui.line(c.bold(c.cyan("\u2726 Top Projects:")));
+        const pRows = projects.map((p) => [
+          p.projectName,
+          compactNumber(p.requests),
+          compactNumber(p.tokens),
+          c.bold(c.gold(formatUsd(p.costUsd))),
+          p.lastEventAt ? new Date(p.lastEventAt).toLocaleDateString() : "\u2013"
+        ]);
+        ui.table(pRows, ["Project", "Requests", "Tokens", "Cost", "Last Active"]);
+        ui.line();
+      }
+      if (daily.length > 1) {
+        ui.line(c.bold(c.cyan("\u2726 Daily Activity (Last 14 Days):")));
+        const maxTokens = Math.max(...daily.map((d) => d.tokens), 1);
+        for (const day of daily) {
+          const barFraction = day.tokens / maxTokens;
+          const bar = gauge(barFraction, 20, c.cyan);
+          ui.line(
+            `  ${c.dim(day.day)}  ${bar}  ${compactNumber(day.tokens).padStart(7)} tokens  ${c.gold(formatUsd(day.costUsd)).padStart(8)}  ${c.dim(`(${day.requests} reqs)`)}`
+          );
+        }
+        ui.line();
+      }
+      ui.outro("Run 'ai-reporter stats --week', '--month', '--year' or '-i' for the full interactive view.");
     }
-    ui.outro("Run 'ai-reporter watch' for a real-time live terminal monitor.");
+  );
+  statsCmd.command("page").description("Launch full interactive statistics page in terminal").action(async () => {
+    await launchInteractiveStats("month");
   });
+}
+async function launchInteractiveStats(initialPeriod = "month") {
+  const lockResult = tryAcquireLock();
+  const watcher = new Watcher({
+    intervalMs: 3e4,
+    verbose: false,
+    onLog: () => {
+    }
+  });
+  const screen = new Screen(watcher, {
+    attachedPid: lockResult.acquired ? void 0 : lockResult.pid,
+    initialPeriod,
+    initialTab: "stats",
+    mode: lockResult.acquired ? "standalone" : "attached"
+  });
+  const handleSigint = () => {
+    screen.stop();
+    if (lockResult.acquired) {
+      lockResult.release();
+    }
+    process.exit(0);
+  };
+  process.on("SIGINT", handleSigint);
+  process.on("SIGTERM", handleSigint);
+  try {
+    screen.onExit = () => {
+      if (lockResult.acquired) {
+        lockResult.release();
+      }
+    };
+    screen.start();
+    if (lockResult.acquired) {
+      await watcher.run();
+    } else {
+      await new Promise((resolve4) => {
+        screen.onExit = () => {
+          resolve4();
+        };
+      });
+    }
+  } finally {
+    screen.stop();
+    if (lockResult.acquired) {
+      lockResult.release();
+    }
+  }
 }
 
 // src/commands/watch.ts
 function registerWatch(program3) {
-  program3.command("watch").description("Live interactive token dashboard and continuous file monitor").option("-i, --interval <seconds>", "seconds between scans", "30").option("--once", "scan once, print summary, and exit").option("--plain", "line-by-line output instead of full-terminal TUI").option("-v, --verbose", "log details of every scan").action(async (options) => {
+  program3.command("watch").description("Live interactive token dashboard and continuous file monitor").option("-i, --interval <seconds>", "seconds between scans", "30").option("--once", "scan once, print summary, and exit").option("--plain", "line-by-line output instead of full-terminal TUI").option("--stats", "open directly to statistics page (month/week/year)").option("-v, --verbose", "log details of every scan").action(async (options) => {
     const intervalSec = Math.max(5, Number(options.interval) || 30);
     const intervalMs = intervalSec * 1e3;
     const isPlain = Boolean(options.plain || options.once || !process.stdout.isTTY);
@@ -7838,6 +8670,7 @@ function registerWatch(program3) {
     if (!lockResult.acquired) {
       const screen2 = new Screen(watcher, {
         attachedPid: lockResult.pid,
+        initialTab: options.stats ? "stats" : "watch",
         mode: "attached"
       });
       const handleSigint2 = () => {
@@ -7852,7 +8685,10 @@ function registerWatch(program3) {
       });
       return;
     }
-    const screen = new Screen(watcher, { mode: "standalone" });
+    const screen = new Screen(watcher, {
+      initialTab: options.stats ? "stats" : "watch",
+      mode: "standalone"
+    });
     watcher["onScanComplete"] = (res) => {
       screen.onScanResult(res.totalNew, res.durationMs);
     };
@@ -7911,8 +8747,10 @@ program2.action(() => {
   );
   console.log();
   ui.line(c.bold("Commands:"));
-  ui.line(`  ${c.bold(c.cyan("ai-reporter watch"))}              Live full-terminal dashboard & file watcher`);
-  ui.line(`  ${c.bold(c.cyan("ai-reporter stats"))}              Detailed spend & model analytics (--today, --week, etc.)`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter watch"))}              Live full-terminal dashboard & watcher (Tab for Stats page)`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter stats"))}              Spend, model analytics & fun metrics (drown lakes, toasters)`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter stats -w / -m / -y"))} Week, Month, or Year breakdown view`);
+  ui.line(`  ${c.bold(c.cyan("ai-reporter stats -i"))}           Full interactive terminal statistics page`);
   ui.line(`  ${c.bold(c.cyan("ai-reporter scan"))}               Scan and catch up all local session files now`);
   ui.line(`  ${c.bold(c.cyan("ai-reporter log"))}                View recent requests stream`);
   ui.line(`  ${c.bold(c.cyan("ai-reporter service install"))}    Run 24/7 in the background on macOS (launchd)`);

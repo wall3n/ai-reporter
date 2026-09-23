@@ -220,10 +220,20 @@ ai-reporter watch
 ```
 
 #### Interactive Hotkeys
+- <kbd>Tab</kbd> : Toggle between **Live Monitor** and **Statistics Page (Month/Week/Year)**
+- <kbd>1</kbd> / <kbd>2</kbd> : Switch directly to Live Monitor (1) or Statistics Page (2)
 - <kbd>q</kbd> : Quit watcher
 - <kbd>p</kbd> : Pause / resume file scanning
 - <kbd>s</kbd> : Trigger an immediate scan now
 - <kbd>r</kbd> : Refresh screen
+
+##### Statistics Page Hotkeys
+- <kbd>w</kbd> : Switch to **Week View** (Mon-Sun breakdown)
+- <kbd>m</kbd> : Switch to **Month View** (Daily breakdown)
+- <kbd>y</kbd> : Switch to **Year View** (12-month breakdown)
+- <kbd>←</kbd> / <kbd>h</kbd> : Navigate to previous period
+- <kbd>→</kbd> / <kbd>l</kbd> : Navigate to next period
+- <kbd>0</kbd> / <kbd>t</kbd> : Jump to current period
 
 > [!NOTE]
 > When the 24/7 background service is active, `ai-reporter watch` automatically connects in **Live Stream Mode**, displaying real-time updates seamlessly without conflicting with background locks.
@@ -242,31 +252,38 @@ Use `--verbose` to inspect individual collector progress.
 
 ---
 
-### 3. Usage & Spend Analytics (`ai-reporter stats`)
+### 3. Usage, Spend & Environmental Analytics (`ai-reporter stats`)
 
-Generate detailed usage summaries and ASCII trend visualizations:
+Generate detailed usage summaries, ASCII trend histograms, and fun environmental & physical metrics:
 
 ```sh
-# All-time statistics
-ai-reporter stats
+# Period-based views (with breakdown histograms & deltas)
+ai-reporter stats --week          # Monday through Sunday weekly breakdown
+ai-reporter stats --month         # Full month daily breakdown
+ai-reporter stats --year          # 12-month calendar breakdown
 
-# Time-filtered analytics
+# Full-terminal interactive statistics page (w/ hotkey period navigation)
+ai-reporter stats -i              # or 'ai-reporter stats page'
+
+# Daily quick checks
 ai-reporter stats --today
 ai-reporter stats --yesterday
-ai-reporter stats --week
-ai-reporter stats --month
+ai-reporter stats --all           # All-time usage (default)
+
+# Export standalone interactive HTML report
+ai-reporter stats --html report.html
 
 # Structured JSON for external dashboards or scripts
-ai-reporter stats --json
+ai-reporter stats --month --json
 ```
 
-Outputs include:
-- Total Prompt, Completion, Cache Read, and Cache Write tokens.
-- Total Estimated Cost ($ USD) and prompt caching dollar savings.
-- Breakdown by AI harness.
-- Breakdown by model family and model name.
-- Breakdown by project / Git repository.
-- 14-day daily activity ASCII histogram.
+#### 🌊 Fun Metrics & Environmental Reality Check
+Every token report includes real-world physical and ecological equivalencies:
+- 🌊 **Drown Lakes Counter**: Liters of fresh cooling water evaporated by GPU datacenters, expressed in fractions of standard freshwater lakes, Olympic swimming pools, and bathtubs.
+- ⚡ **Compute Energy**: Kilowatt-hours (kWh) consumed, translated to slices of bread toasted, smartphone battery charges, and LED lightbulb hours.
+- 🌱 **Carbon Footprint**: Kilograms of CO₂ emitted, gasoline passenger car kilometers driven, and tree-years required to absorb the emissions.
+- ⌨️ **Human Scale & Literature**: Total words generated, human typing time at 50 WPM (hours, days, years), and copies of Leo Tolstoy's *War & Peace* or complete *Harry Potter* series.
+- ☕ **Developer Fuel**: Dollar spend converted to specialty oat flat whites and artisan pizzas.
 
 ---
 
